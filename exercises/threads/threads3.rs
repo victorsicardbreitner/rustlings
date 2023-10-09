@@ -3,7 +3,20 @@
 // Execute `rustlings hint threads3` or use the `hint` watch subcommand for a
 // hint.
 
-// I AM NOT DONE
+// https://doc.rust-lang.org/std/sync/mpsc/index.html
+/*
+
+Ce module fournit une communication basée sur des messages sur des canaux, concrètement définis parmi trois types :
+
+    émetteur
+    émetteur synchrone
+    Récepteur
+
+Un expéditeur ou un expéditeur synchrone est utilisé pour envoyer des données à un récepteur.
+// Les deux expéditeurs peuvent être clonés (multiproducteurs), de sorte que plusieurs threads peuvent envoyer simultanément des données à un récepteur (consommateur unique).
+
+*/
+
 
 use std::sync::mpsc;
 use std::sync::Arc;
@@ -31,10 +44,15 @@ fn send_tx(q: Queue, tx: mpsc::Sender<u32>) -> () {
     let qc1 = Arc::clone(&qc);
     let qc2 = Arc::clone(&qc);
 
+
+    let txa = Arc::new(tx); //Si seul : move occurs because `txa` has type `Arc<Sender<u32>>`, which does not implement the `Copy` trait
+    let tx1 = Arc::clone(&txa);
+    let tx2 = Arc::clone(&txa); // il en faut un second car sinon "value used here after move"
+
     thread::spawn(move || {
         for val in &qc1.first_half {
             println!("sending {:?}", val);
-            tx.send(*val).unwrap();
+            tx1.send(*val).unwrap();
             thread::sleep(Duration::from_secs(1));
         }
     });
@@ -42,11 +60,17 @@ fn send_tx(q: Queue, tx: mpsc::Sender<u32>) -> () {
     thread::spawn(move || {
         for val in &qc2.second_half {
             println!("sending {:?}", val);
-            tx.send(*val).unwrap();
+            tx2.send(*val).unwrap(); //ici sinon "value used here after move"
             thread::sleep(Duration::from_secs(1));
         }
     });
 }
+
+
+
+//LES TESTS
+
+
 
 #[test]
 fn main() {
